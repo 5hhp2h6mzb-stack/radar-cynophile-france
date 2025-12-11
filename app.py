@@ -16,12 +16,45 @@ st.write(
 
 st.markdown("---")
 
+
+def ajouter_entreprises_test():
+    """
+    Insère quelques sociétés de test dans la base,
+    pour vérifier que tout fonctionne.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    entreprises_demo = [
+        ("SecuriDog Provence", "Marseille (13008)", "13", "demo_place_1"),
+        ("Gardes & Chiens Azur", "Nice (06000)", "06", "demo_place_2"),
+        ("Cynotech Sud Protection", "Toulon (83000)", "83", "demo_place_3"),
+    ]
+
+    for nom, adresse, dep, place_id in entreprises_demo:
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO entreprises (nom, adresse, departement, place_id)
+            VALUES (?, ?, ?, ?)
+            """,
+            (nom, adresse, dep, place_id),
+        )
+
+    conn.commit()
+    conn.close()
+
+
 st.header("📊 Tableau des entreprises cynophiles")
+
+# Bouton pour injecter des sociétés de test
+if st.button("➕ Ajouter quelques sociétés de test"):
+    ajouter_entreprises_test()
+    st.success("Des sociétés de test ont été ajoutées à la base. 👌")
 
 # Connexion à la base
 conn = get_connection()
 
-# On essaie de charger les entreprises + risques (même si pour l'instant c'est vide)
+# On charge les entreprises + risques (même si les risques ne sont pas encore calculés)
 query = """
 SELECT 
     e.nom AS 'Nom de l’entreprise',
@@ -36,20 +69,24 @@ ORDER BY r.score DESC
 try:
     df = pd.read_sql_query(query, conn)
 except Exception:
-    df = pd.DataFrame(columns=[
-        "Nom de l’entreprise", "Adresse", "Département",
-        "Score de risque", "Niveau de risque"
-    ])
+    df = pd.DataFrame(
+        columns=[
+            "Nom de l’entreprise",
+            "Adresse",
+            "Département",
+            "Score de risque",
+            "Niveau de risque",
+        ]
+    )
 
 conn.close()
 
 if df.empty:
     st.info(
-        "Pour l’instant, aucune entreprise n’est enregistrée dans la base. "
-        "Dans les prochaines étapes, nous allons :\n"
-        "- récupérer automatiquement les sociétés cynophiles par département,\n"
-        "- collecter leurs avis Google,\n"
-        "- calculer un score de risque pour chacune."
+        "Pour l’instant, aucune entreprise n’est enregistrée dans la base.\n\n"
+        "Clique sur le bouton ci-dessus pour ajouter quelques sociétés de test, "
+        "puis, dans les étapes suivantes, nous brancherons la collecte automatique "
+        "et l'analyse des avis Google."
     )
 else:
     st.dataframe(df, use_container_width=True)
@@ -57,8 +94,10 @@ else:
 st.markdown("---")
 
 st.subheader("🚧 Prochaines étapes")
-st.write("""
-- Ajouter un bouton **“Scanner la France”** qui ira chercher automatiquement les sociétés cynophiles.
-- Récupérer leurs **avis Google**.
-- Analyser les textes avec un moteur simple (mots-clés) pour calculer un **score de risque Livre 6**.
-""")
+st.write(
+    """
+- Remplacer les sociétés de test par une collecte automatique (Google Maps, par département).
+- Ajouter la collecte des **avis Google** pour chaque société.
+- Mettre en place l’**analyse des textes** (mots-clés / signaux faibles) pour calculer un **score de risque Livre 6**.
+"""
+)
