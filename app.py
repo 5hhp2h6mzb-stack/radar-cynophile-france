@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from database import init_db, get_connection
-from analyze import analyze_demo  # nouveau
+from analyse import analyze_demo  # nouveau
 
 # Initialisation de la base de données (création des tables si besoin)
 init_db()
