@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from database import init_db, get_connection
+from analyze import analyze_demo  # nouveau
 
 # Initialisation de la base de données (création des tables si besoin)
 init_db()
@@ -46,15 +47,25 @@ def ajouter_entreprises_test():
 
 st.header("📊 Tableau des entreprises cynophiles")
 
-# Bouton pour injecter des sociétés de test
-if st.button("➕ Ajouter quelques sociétés de test"):
-    ajouter_entreprises_test()
-    st.success("Des sociétés de test ont été ajoutées à la base. 👌")
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("➕ Ajouter quelques sociétés de test"):
+        ajouter_entreprises_test()
+        st.success("Des sociétés de test ont été ajoutées à la base. 👌")
+
+with col2:
+    if st.button("⚖️ Analyser les risques (démo)"):
+        analyze_demo()
+        st.success(
+            "Analyse de risque démo effectuée. "
+            "Les scores et niveaux de risque ont été mis à jour."
+        )
 
 # Connexion à la base
 conn = get_connection()
 
-# On charge les entreprises + risques (même si les risques ne sont pas encore calculés)
+# On charge les entreprises + risques
 query = """
 SELECT 
     e.nom AS 'Nom de l’entreprise',
@@ -84,9 +95,8 @@ conn.close()
 if df.empty:
     st.info(
         "Pour l’instant, aucune entreprise n’est enregistrée dans la base.\n\n"
-        "Clique sur le bouton ci-dessus pour ajouter quelques sociétés de test, "
-        "puis, dans les étapes suivantes, nous brancherons la collecte automatique "
-        "et l'analyse des avis Google."
+        "Clique sur le bouton **“Ajouter quelques sociétés de test”** pour ajouter quelques exemples, "
+        "puis sur **“Analyser les risques (démo)”** pour voir comment le radar classe les entreprises."
     )
 else:
     st.dataframe(df, use_container_width=True)
@@ -98,6 +108,6 @@ st.write(
     """
 - Remplacer les sociétés de test par une collecte automatique (Google Maps, par département).
 - Ajouter la collecte des **avis Google** pour chaque société.
-- Mettre en place l’**analyse des textes** (mots-clés / signaux faibles) pour calculer un **score de risque Livre 6**.
+- Remplacer l'analyse démo par une **vraie analyse texte** (mots-clés de maltraitance, alcool, violence, etc.).
 """
 )
