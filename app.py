@@ -1,11 +1,14 @@
 import streamlit as st
 import pandas as pd
-from database import init_db, get_connection
-from analyse import analyze_demo  # nouveau
 
-# Initialisation de la base de données (création des tables si besoin)
+from database import init_db, get_connection
+from analyse import analyze_demo          # fichier analyse.py (nom en français)
+from collect import scanner_france_demo   # fichier collect.py (scan démo)
+
+# Initialisation de la base de données
 init_db()
 
+# --- TITRES ---
 st.title("🐕‍🦺 Radar Cynophile France")
 st.subheader("Analyse des avis Google des sociétés de sécurité cynophiles")
 
@@ -18,11 +21,8 @@ st.write(
 st.markdown("---")
 
 
+# --- FONCTION POUR AJOUTER DES ENTREPRISES DE TEST ---
 def ajouter_entreprises_test():
-    """
-    Insère quelques sociétés de test dans la base,
-    pour vérifier que tout fonctionne.
-    """
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -45,27 +45,30 @@ def ajouter_entreprises_test():
     conn.close()
 
 
+# --- BOUTONS ---
 st.header("📊 Tableau des entreprises cynophiles")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    if st.button("➕ Ajouter quelques sociétés de test"):
+    if st.button("➕ Sociétés de test"):
         ajouter_entreprises_test()
-        st.success("Des sociétés de test ont été ajoutées à la base. 👌")
+        st.success("Sociétés de test ajoutées 👌")
 
 with col2:
-    if st.button("⚖️ Analyser les risques (démo)"):
+    if st.button("⚖️ Analyse risques (démo)"):
         analyze_demo()
-        st.success(
-            "Analyse de risque démo effectuée. "
-            "Les scores et niveaux de risque ont été mis à jour."
-        )
+        st.success("Analyse démo réalisée ✔️")
 
-# Connexion à la base
+with col3:
+    if st.button("🔍 Scanner la France (démo)"):
+        scanner_france_demo()
+        st.success("Scan national démo effectué 🇫🇷")
+
+
+# --- AFFICHAGE DU TABLEAU ---
 conn = get_connection()
 
-# On charge les entreprises + risques
 query = """
 SELECT 
     e.nom AS 'Nom de l’entreprise',
@@ -77,6 +80,7 @@ FROM entreprises e
 LEFT JOIN risques r ON e.place_id = r.place_id
 ORDER BY r.score DESC
 """
+
 try:
     df = pd.read_sql_query(query, conn)
 except Exception:
@@ -92,22 +96,28 @@ except Exception:
 
 conn.close()
 
+
 if df.empty:
     st.info(
-        "Pour l’instant, aucune entreprise n’est enregistrée dans la base.\n\n"
-        "Clique sur le bouton **“Ajouter quelques sociétés de test”** pour ajouter quelques exemples, "
-        "puis sur **“Analyser les risques (démo)”** pour voir comment le radar classe les entreprises."
+        "Aucune entreprise enregistrée.\n\n"
+        "Clique sur **Sociétés de test** ou **Scanner la France (démo)**."
     )
 else:
     st.dataframe(df, use_container_width=True)
 
 st.markdown("---")
 
+
+# --- PROCHAINES ÉTAPES ---
 st.subheader("🚧 Prochaines étapes")
 st.write(
     """
-- Remplacer les sociétés de test par une collecte automatique (Google Maps, par département).
-- Ajouter la collecte des **avis Google** pour chaque société.
-- Remplacer l'analyse démo par une **vraie analyse texte** (mots-clés de maltraitance, alcool, violence, etc.).
+- Remplacer le scan démo par une **vraie recherche Google Maps (API)**.
+- Ajouter la collecte des **avis Google**.
+- Remplacer l'analyse démo par une **vraie analyse automatique** :
+  - maltraitance de chiens 🐕  
+  - alcool / violence ⚠️  
+  - absence de service ❌  
+- Ajouter une carte de France + heatmap.
 """
 )
