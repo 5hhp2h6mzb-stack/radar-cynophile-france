@@ -60,7 +60,7 @@ def ajouter_avis_test():
             "Client anonyme",
             1,
             "Les agents étaient alcoolisés et agressifs, on plaignait vraiment les chiens, "
-            "chien maltraité et maigre, comportement violent.",
+            "chien maltraite et maigre, comportement violent.",
             "il y a 2 semaines",
         ),
         # Sur Cynotech Sud Protection (demo_place_3) : cas modéré (service + tensions)
@@ -115,14 +115,14 @@ with col1:
         st.success("Sociétés de test ajoutées 👌")
 
 with col2:
-    if st.button("⚖️ Analyse risques (démo)"):
-        analyze_demo()
-        st.success("Analyse démo réalisée ✔️")
-
-with col3:
     if st.button("🔍 Scanner la France (démo)"):
         scanner_france_demo()
         st.success("Scan national démo effectué 🇫🇷")
+
+with col3:
+    if st.button("⚖️ Analyse risques (démo)"):
+        analyze_demo()
+        st.success("Analyse démo réalisée ✔️")
 
 st.markdown("---")
 
@@ -136,7 +136,7 @@ with col4:
         st.success("Avis de test ajoutés à la base 💬")
 
 with col5:
-    if st.button("⚖️ Analyse risques (avis)"):
+    if st.button("⚖️ Analyse risques (à partir des avis)"):
         analyze_from_reviews()
         st.success(
             "Analyse des risques à partir des avis effectuée. "
@@ -192,7 +192,7 @@ st.markdown("---")
 st.subheader("🚧 Prochaines étapes")
 st.write(
     """
-- Connecter la collecte d'avis à **Google Maps / Google Places** (réel au lieu d'avis de test).
+- Remplacer les avis de test par de **vrais avis Google** (Places API).
 - Étendre les mots-clés et affiner le scoring.
 - Ajouter un filtre par département et par niveau de risque.
 - Ajouter une carte de France (heatmap des risques cynophiles).
