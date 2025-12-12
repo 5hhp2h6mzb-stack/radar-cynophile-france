@@ -4,6 +4,7 @@ import pandas as pd
 from database import init_db, get_connection
 from analyse import analyze_demo, analyze_from_reviews
 from collect import scanner_france_demo
+from reviews import fetch_reviews_for_all_companies
 
 # Initialisation de la base de données
 init_db()
@@ -23,6 +24,7 @@ st.markdown("---")
 
 # --- FONCTIONS D'AIDE ---
 def ajouter_entreprises_test():
+    """Ajoute quelques sociétés de test dans la base."""
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -104,8 +106,8 @@ def ajouter_avis_test():
     conn.close()
 
 
-# --- BOUTONS D'ACTION ---
-st.header("⚙️ Actions")
+# --- BOUTONS D'ACTION (ENTREPRISES) ---
+st.header("⚙️ Actions sur les entreprises")
 
 col1, col2, col3 = st.columns(3)
 
@@ -126,9 +128,10 @@ with col3:
 
 st.markdown("---")
 
+# --- BOUTONS D'ACTION (AVIS & ANALYSE RÉELLE) ---
 st.subheader("📝 Avis et analyse réelle")
 
-col4, col5 = st.columns(2)
+col4, col5, col6 = st.columns(3)
 
 with col4:
     if st.button("📝 Ajouter des avis de test"):
@@ -136,6 +139,12 @@ with col4:
         st.success("Avis de test ajoutés à la base 💬")
 
 with col5:
+    if st.button("🔎 Récupérer les avis Google (réel)"):
+        resultats = fetch_reviews_for_all_companies()
+        st.write(resultats)
+        st.success("Avis Google récupérés (voir détails ci-dessus) ✔️")
+
+with col6:
     if st.button("⚖️ Analyse risques (à partir des avis)"):
         analyze_from_reviews()
         st.success(
@@ -156,7 +165,7 @@ SELECT
     e.adresse AS 'Adresse',
     e.departement AS 'Département',
     IFNULL(r.score, 0) AS 'Score de risque',
-    IFNULL(r.niveau, 'non analysé') AS 'Niveau de risque'
+    IFNULL(r.niveau, 'Niveau de risque', 'non analysé') AS 'Niveau de risque'
 FROM entreprises e
 LEFT JOIN risques r ON e.place_id = r.place_id
 ORDER BY r.score DESC
@@ -181,7 +190,7 @@ if df.empty:
     st.info(
         "Aucune entreprise enregistrée.\n\n"
         "Clique sur **Sociétés de test** ou **Scanner la France (démo)**, "
-        "puis éventuellement ajoute des avis de test et lance l'analyse."
+        "puis éventuellement ajoute des avis (test ou Google) et lance l'analyse."
     )
 else:
     st.dataframe(df, use_container_width=True)
@@ -192,9 +201,10 @@ st.markdown("---")
 st.subheader("🚧 Prochaines étapes")
 st.write(
     """
-- Remplacer les avis de test par de **vrais avis Google** (Places API).
-- Étendre les mots-clés et affiner le scoring.
+- Remplacer progressivement le scan démo par un **scan réel par département** (Google Places).
+- Étendre les mots-clés et affiner le scoring (pondération par nombre d'avis, récence, etc.).
 - Ajouter un filtre par département et par niveau de risque.
 - Ajouter une carte de France (heatmap des risques cynophiles).
+- Ajouter un export Excel / CSV pour exploitation CNAPS.
 """
 )
