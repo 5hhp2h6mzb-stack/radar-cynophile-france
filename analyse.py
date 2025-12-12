@@ -1,7 +1,6 @@
 from database import get_connection
-from utils import normalize
 
-# Mots-clés par catégorie
+# Mots-clés par catégorie (en minuscule, sans accents)
 MOTS_CLES = {
     "maltraitance_chien": [
         "chien maltraite",
@@ -10,7 +9,7 @@ MOTS_CLES = {
         "chien maigre",
         "chien enferme",
         "pauvres chiens",
-        "maltraitance"
+        "maltraitance",
     ],
     "violence": [
         "agresse",
@@ -20,13 +19,13 @@ MOTS_CLES = {
         "menace",
         "menaces",
         "violence",
-        "violent"
+        "violent",
     ],
     "alcool": [
         "alcoolise",
         "ivre",
         "bourre",
-        "alcool"
+        "alcool",
     ],
     "service": [
         "jamais la",
@@ -35,7 +34,7 @@ MOTS_CLES = {
         "aucune ronde",
         "aucune surveillance",
         "non professionnel",
-        "incompetent"
+        "incompetent",
     ],
 }
 
@@ -47,7 +46,7 @@ SCORES = {
 }
 
 
-def reset_risques(conn):
+def _reset_risques(conn):
     cursor = conn.cursor()
     cursor.execute("DELETE FROM risques")
     conn.commit()
@@ -58,13 +57,13 @@ def analyze_demo():
     Version démo : scores fixés pour les sociétés de test.
     """
     risques_demo = {
-        "demo_place_1": (10, "faible"),
-        "demo_place_2": (80, "élevé"),
-        "demo_place_3": (40, "modéré"),
+        "demo_place_1": (10, "faible"),   # SecuriDog Provence
+        "demo_place_2": (80, "élevé"),    # Gardes & Chiens Azur
+        "demo_place_3": (40, "modéré"),   # Cynotech Sud Protection
     }
 
     conn = get_connection()
-    reset_risques(conn)
+    _reset_risques(conn)
     cursor = conn.cursor()
 
     for place_id, (score, niveau) in risques_demo.items():
@@ -91,7 +90,7 @@ def analyze_from_reviews():
     cursor = conn.cursor()
 
     # On repart de zéro
-    reset_risques(conn)
+    _reset_risques(conn)
 
     # Récupérer tous les avis
     cursor.execute("SELECT place_id, note, texte FROM avis")
@@ -101,7 +100,10 @@ def analyze_from_reviews():
     scores_par_place = {}
 
     for place_id, note, texte in rows:
-        t_norm = normalize(texte)
+        if not texte:
+            continue
+
+        t_norm = texte.lower()
         score_avis = 0
 
         for categorie, mots in MOTS_CLES.items():
@@ -109,7 +111,7 @@ def analyze_from_reviews():
                 if mot in t_norm:
                     score_avis += SCORES[categorie]
 
-        # Bonus si la note est très basse
+        # Bonus si la note est très basse (1 ou 2 étoiles)
         try:
             if note is not None and int(note) <= 2:
                 score_avis += 5
@@ -119,7 +121,8 @@ def analyze_from_reviews():
         if score_avis > 0:
             scores_par_place[place_id] = scores_par_place.get(place_id, 0) + score_avis
 
-    # Transformer les scores en niveaux
+    # Transformer les scores en niveaux et les enregistrer
+    cursor = conn.cursor()
     for place_id, score in scores_par_place.items():
         niveau = "faible"
         if score > 20:
